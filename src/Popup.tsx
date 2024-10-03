@@ -77,10 +77,10 @@ const Popup = ({
       timer = setTimeout(handleAnchorLayout, 100);
     };
 
-    Dimensions.addEventListener('change', recalculateAnchorLayout);
+    Dimensions.addEventListener?.('change', recalculateAnchorLayout);
 
     return () => {
-      Dimensions.removeEventListener('change', recalculateAnchorLayout);
+      Dimensions.removeEventListener?.('change', recalculateAnchorLayout);
       clearTimeout(timer);
     };
   }, [handleAnchorLayout]);
