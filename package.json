@@ -1,6 +1,7 @@
 {
   "name": "react-native-relative-popup",
-  "version": "0.1.7",
+  "version": "0.2.0",
+  "packageManager": "pnpm@10.7.1",
   "description": "A popup component that sticks to an element and stays on top of everything.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
@@ -27,9 +28,9 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "prepare": "bob build",
     "release": "release-it",
-    "example": "yarn --cwd example",
+    "example": "cd example && pnpm install",
     "pods": "cd example && pod-install --quiet",
-    "bootstrap": "yarn example && yarn && yarn pods"
+    "bootstrap": "pnpm example && pnpm install && pnpm pods"
   },
   "keywords": [
     "react-native",
