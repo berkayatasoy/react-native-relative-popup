@@ -60,16 +60,14 @@ const Popup = ({
   }, []);
 
   useEffect(() => {
-    const recalculateAnchorLayout = () => {
-      setTimeout(handleAnchorLayout, 100);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const recalc = () => {
+      timer = setTimeout(handleAnchorLayout, 100);
     };
-
-    const subscription = Dimensions.addEventListener?.(
-      'change',
-      recalculateAnchorLayout
-    );
+    Dimensions.addEventListener('change', recalc);
     return () => {
-      subscription?.remove?.();
+      if (timer) clearTimeout(timer);
+      (Dimensions as any).removeEventListener?.('change', recalc);
     };
   }, [handleAnchorLayout]);
 
@@ -104,6 +102,8 @@ const Popup = ({
       default:
         break;
     }
+
+    // Yatay sınama
     switch (xAxis) {
       case 'left':
         if (
@@ -211,13 +211,14 @@ const Popup = ({
         break;
     }
 
-    // clamp
+    // Ekran dışına taşmayı engelle (clamp)
     const maxLeft = screenW - insetRight - contentLayout.width;
     const maxTop = screenH - insetBottom - contentLayout.height;
 
     left = clamp(left, insetLeft, Math.max(insetLeft, maxLeft));
     top = clamp(top, insetTop, Math.max(insetTop, maxTop));
 
+    // İçerik ekran boyutundan büyükse sıkıştır
     const extraSizeStyle: any = {};
     if (contentLayout.width > maxAllowedW) {
       extraSizeStyle.maxWidth = maxAllowedW;
@@ -231,7 +232,7 @@ const Popup = ({
     return {
       top,
       left,
-      opacity: measured ? 1 : 0,
+      opacity: measured ? 1 : 0, // ölçümler gelene kadar gizle
       ...extraSizeStyle,
     };
   }, [
