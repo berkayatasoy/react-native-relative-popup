@@ -25,14 +25,12 @@ const DEFAULT_LAYOUT = {
 
 const Popup = ({
   debug,
-
   isOpen,
   position,
   horizontalSpacing,
   verticalSpacing,
   children,
   safeAreaInsets,
-
   overlay,
   onClose,
 }: PopupProps) => {
@@ -48,68 +46,53 @@ const Popup = ({
   const handleAnchorLayout = useCallback(() => {
     if (anchorRef.current) {
       anchorRef.current.measureInWindow((x, y, width, height) => {
-        setAnchorLayout({
-          x,
-          y,
-          width,
-          height,
-        });
+        setAnchorLayout({ x, y, width, height });
       });
     }
-  }, [anchorRef]);
+  }, []);
 
   const handleContentLayout = useCallback(() => {
     if (contentRef.current) {
       contentRef.current.measureInWindow((x, y, width, height) => {
-        setContentLayout({
-          x,
-          y,
-          width,
-          height,
-        });
+        setContentLayout({ x, y, width, height });
       });
     }
-  }, [contentRef]);
+  }, []);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
     const recalculateAnchorLayout = () => {
-      timer = setTimeout(handleAnchorLayout, 100);
+      setTimeout(handleAnchorLayout, 100);
     };
 
-    Dimensions.addEventListener?.('change', recalculateAnchorLayout);
-
+    const subscription = Dimensions.addEventListener?.(
+      'change',
+      recalculateAnchorLayout
+    );
     return () => {
-      Dimensions.removeEventListener?.('change', recalculateAnchorLayout);
-      clearTimeout(timer);
+      subscription?.remove?.();
     };
   }, [handleAnchorLayout]);
 
   useEffect(() => {
-    if (isOpen && anchorRef.current) {
+    if (isOpen) {
       handleAnchorLayout();
     }
   }, [isOpen, handleAnchorLayout]);
 
   useEffect(() => {
-    if (isOpen && contentRef.current) {
+    if (isOpen) {
       handleContentLayout();
     }
   }, [isOpen, handleContentLayout]);
 
   useEffect(() => {
     let [yAxis, xAxis] = position.split('-');
-
     switch (yAxis) {
       case 'top':
-        if (
-          anchorLayout.y - contentLayout.height <
-          0 + (safeAreaInsets.top || 0)
-        ) {
+        if (anchorLayout.y - contentLayout.height < (safeAreaInsets.top || 0)) {
           yAxis = 'bottom';
         }
         break;
-
       case 'bottom':
         if (
           anchorLayout.y + anchorLayout.height + contentLayout.height >
@@ -118,11 +101,9 @@ const Popup = ({
           yAxis = 'top';
         }
         break;
-
       default:
         break;
     }
-
     switch (xAxis) {
       case 'left':
         if (
@@ -136,13 +117,13 @@ const Popup = ({
       case 'right':
         if (
           anchorLayout.x + anchorLayout.width - contentLayout.width <
-          0 + (safeAreaInsets.left || 0)
+          (safeAreaInsets.left || 0)
         ) {
           xAxis = 'left';
         }
         break;
 
-      case 'center':
+      case 'center': {
         const centerPoint = anchorLayout.x + anchorLayout.width / 2;
         if (
           centerPoint + contentLayout.width / 2 >
@@ -152,11 +133,12 @@ const Popup = ({
         }
         if (
           centerPoint - contentLayout.width / 2 <
-          0 + (safeAreaInsets.top || 0)
+          (safeAreaInsets.left || 0)
         ) {
           xAxis = 'left';
         }
         break;
+      }
 
       default:
         break;
@@ -176,7 +158,25 @@ const Popup = ({
   ]);
 
   const computedStyle = useMemo(() => {
-    const [yAxis, xAxis] = computedPosition.split('-');
+    const clamp = (v: number, min: number, max: number) =>
+      Math.min(Math.max(v, min), max);
+
+    const [yAxis, xAxis] = String(computedPosition).split('-');
+
+    const hasAnchor = anchorLayout.width > 0 || anchorLayout.height > 0;
+    const hasContent = contentLayout.width > 0 || contentLayout.height > 0;
+    const measured = hasAnchor && hasContent;
+
+    const insetTop = safeAreaInsets.top || 0;
+    const insetRight = safeAreaInsets.right || 0;
+    const insetBottom = safeAreaInsets.bottom || 0;
+    const insetLeft = safeAreaInsets.left || 0;
+
+    const screenW = dimensions.width;
+    const screenH = dimensions.height;
+
+    const maxAllowedW = Math.max(0, screenW - insetLeft - insetRight);
+    const maxAllowedH = Math.max(0, screenH - insetTop - insetBottom);
 
     let top = 0;
     let left = 0;
@@ -185,11 +185,9 @@ const Popup = ({
       case 'top':
         top = anchorLayout.y - contentLayout.height - verticalSpacing;
         break;
-
       case 'bottom':
         top = anchorLayout.y + anchorLayout.height + verticalSpacing;
         break;
-
       default:
         break;
     }
@@ -198,7 +196,6 @@ const Popup = ({
       case 'left':
         left = anchorLayout.x + horizontalSpacing;
         break;
-
       case 'right':
         left =
           anchorLayout.x +
@@ -206,20 +203,36 @@ const Popup = ({
           contentLayout.width -
           horizontalSpacing;
         break;
-
       case 'center':
         left =
           anchorLayout.x + anchorLayout.width / 2 - contentLayout.width / 2;
         break;
-
       default:
         break;
+    }
+
+    // clamp
+    const maxLeft = screenW - insetRight - contentLayout.width;
+    const maxTop = screenH - insetBottom - contentLayout.height;
+
+    left = clamp(left, insetLeft, Math.max(insetLeft, maxLeft));
+    top = clamp(top, insetTop, Math.max(insetTop, maxTop));
+
+    const extraSizeStyle: any = {};
+    if (contentLayout.width > maxAllowedW) {
+      extraSizeStyle.maxWidth = maxAllowedW;
+      left = insetLeft;
+    }
+    if (contentLayout.height > maxAllowedH) {
+      extraSizeStyle.maxHeight = maxAllowedH;
+      top = insetTop;
     }
 
     return {
       top,
       left,
-      opacity: top === 0 && left === 0 ? 0 : 1,
+      opacity: measured ? 1 : 0,
+      ...extraSizeStyle,
     };
   }, [
     computedPosition,
@@ -227,6 +240,11 @@ const Popup = ({
     contentLayout,
     horizontalSpacing,
     verticalSpacing,
+    dimensions,
+    safeAreaInsets.top,
+    safeAreaInsets.right,
+    safeAreaInsets.bottom,
+    safeAreaInsets.left,
   ]);
 
   return (
