@@ -44,19 +44,23 @@ const Popup = ({
   >(position);
 
   const handleAnchorLayout = useCallback(() => {
+    setTimeout(() => {
     if (anchorRef.current) {
       anchorRef.current.measureInWindow((x, y, width, height) => {
-        setAnchorLayout({ x, y, width, height });
-      });
-    }
+          setAnchorLayout({ x, y, width, height });
+        });
+      }
+    }, anchorRef.current ? 0 : 500);
   }, []);
 
   const handleContentLayout = useCallback(() => {
+    setTimeout(() => {
     if (contentRef.current) {
-      contentRef.current.measureInWindow((x, y, width, height) => {
-        setContentLayout({ x, y, width, height });
-      });
-    }
+        contentRef.current.measureInWindow((x, y, width, height) => {
+          setContentLayout({ x, y, width, height });
+        });
+      }
+    },  contentRef.current ? 0 : 500);
   }, []);
 
   useEffect(() => {
