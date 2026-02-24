@@ -73,6 +73,7 @@ export default function App() {
   );
 }
 
+
 const styles = StyleSheet.create({
   app: {
     flex: 1,

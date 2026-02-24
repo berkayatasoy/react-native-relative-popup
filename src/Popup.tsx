@@ -68,10 +68,10 @@ const Popup = ({
     const recalc = () => {
       timer = setTimeout(handleAnchorLayout, 100);
     };
-    Dimensions.addEventListener('change', recalc);
+    const subscription = Dimensions.addEventListener('change', recalc);
     return () => {
       if (timer) clearTimeout(timer);
-      (Dimensions as any).removeEventListener?.('change', recalc);
+      subscription.remove();
     };
   }, [handleAnchorLayout]);
 
